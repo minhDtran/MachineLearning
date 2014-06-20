@@ -1,0 +1,57 @@
+Machine learning
+========================================================
+
+>1.Project description : This is the machine learning project using the Rpart method from the caret function in the R studio.
+>> The program reads two excel cvs files. One is the training data set, and the other is testing data set.
+>> The outcome variable in the training data set is classe , and the rest are the predictor of the training data set.
+>> I will partitition the training data set into training data set and testing data set. 
+>> I will design a prediction model for the training set, and use it to test against the test data set. I will record the accurancy 
+   and their confidence interval.
+>> I then use the prediction model to test against the real testing data set.
+
+
+** Step 1 Pre processing of two data files : read in two data files meaning training and testing data files.
+I then choose to remove NA from training data file because NA does not work with Rpart method ** 
+
+```{r}
+training <- read.csv ("C:/dung/datascience/MachineLearning/pml-training.csv")
+testing <-  read.csv ("C:/dung/datascience/MachineLearning/pml-testing.csv")
+trainRawData <- read.csv("C:/dung/datascience/MachineLearning/pml-training.csv",na.strings=c("NA",""))
+# discard NAs
+NAs <- apply(trainRawData,2,function(x) {sum(is.na(x))}) 
+validData <- trainRawData[,which(NAs == 0)]
+head (validData)
+```
+** Step 2 : Create data partition of the training data set : I partition training data set into two data set . One is the training and other is testing data sets. The training data set contains 80% of the data from the original data set , and the testing data set contains 20% from the testing data set.
+
+```{r}
+library(caret)
+trainIndex <- createDataPartition(y = validData$classe, p=0.8,list=FALSE) # 3927 rows
+trainData <- validData[trainIndex,]
+
+
+```
+** Step 3 : I then removed all unused predictors from my model. The unused predictors such as timestamp, X, user_name, new_window variables from my training data 
+
+```{r}
+removeIndex <- grep("timestamp|X|user_name|new_window",names(trainData))
+trainData <- trainData [,-removeIndex]
+names (trainData)
+```
+** Step 4 : Train model based on the training data with classe as the outcome variable, and the method is Rpart 
+```{r}
+ modelFit <- train (classe ~., data = trainData, method = "rpart")
+modelFit
+```
+
+
+** Step 5: I then use the training model to test again the testing data from the original training data set.
+```{r}
+testData <- validData [-trainIndex,]
+predict (modelFit,testData)
+```
+
+** Step 6: I then use the original testing data to test again my training model
+```{r}
+predict (modelFit,testing)
+```
